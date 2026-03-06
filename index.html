@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🪔 Wedding Planner — Shared</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d1a;--bg2:#12122a;--bg3:#14142a;--border:#1e1e3a;--border2:#2a2a4a;
+  --text:#e0ddd5;--text-bright:#f0ece4;--text-dim:#888;--text-dimmer:#666;--text-dimmest:#555;
+  --gold:#D4A574;--gold-dark:#C08050;
+  --font-serif:'Newsreader','Georgia',serif;--font-sans:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-serif);min-height:100vh}
+input,select,button,textarea{font-family:var(--font-sans)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)!important}
+button{cursor:pointer}
+
+/* Setup overlay */
+.setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:520px;width:100%;animation:slideUp .4s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.setup-card h2{font-size:20px;color:var(--text-bright);margin-bottom:6px}
+.setup-card p{font-size:13px;color:var(--text-dim);font-family:var(--font-sans);margin-bottom:20px;line-height:1.6}
+.setup-card .step{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:12px;color:var(--text-dim);font-family:var(--font-sans);line-height:1.7}
+.setup-card .step strong{color:var(--gold)}
+.setup-card .step code{background:var(--border);color:var(--text);padding:1px 5px;border-radius:3px;font-size:11px}
+
+/* Header */
+.header{background:linear-gradient(180deg,var(--bg3) 0%,var(--bg) 100%);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.header-inner{max-width:760px;margin:0 auto;padding:20px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px}
+h1{font-size:22px;font-weight:600;color:var(--text-bright);letter-spacing:-0.02em}
+.subtitle{font-size:13px;color:var(--text-dim);margin-top:4px;font-family:var(--font-sans)}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sync-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-family:var(--font-sans);display:inline-flex;align-items:center;gap:4px}
+.sync-ok{color:#8BC49A;background:#8BC49A15}
+.sync-loading{color:var(--gold);background:#D4A57415}
+.sync-error{color:#E07088;background:#E0708815}
+.header-btn{font-size:12px;color:#bbb;background:var(--bg2);border:1px solid var(--border2);padding:6px 12px;border-radius:6px;font-family:var(--font-sans)}
+.header-btn:hover{background:var(--border);color:var(--text-bright)}
+.user-badge{font-size:11px;color:var(--gold);background:#D4A57410;border:1px solid #D4A57430;padding:4px 10px;border-radius:20px;font-family:var(--font-sans)}
+
+/* Section tabs (Expenses / Guests) */
+.section-tabs{max-width:760px;margin:0 auto;padding:14px 20px 0;display:flex;gap:6px}
+.section-tab{padding:8px 18px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dimmer);font-size:13px;font-family:var(--font-sans);transition:all .2s}
+.section-tab:hover{color:var(--text-dim);border-color:var(--border2)}
+.section-tab.active{color:var(--gold);border-color:var(--gold);background:#D4A57410}
+
+/* Sub tabs */
+.tabs{max-width:760px;margin:0 auto;padding:8px 20px 0;display:flex;gap:4px}
+.tab{flex:1;padding:10px 0;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-dimmer);font-size:13px;font-family:var(--font-sans);transition:all .2s}
+.tab:hover{color:var(--text-dim)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* Body */
+.body{max-width:760px;margin:0 auto;padding:20px 20px 40px}
+
+/* Form */
+.form-card{background:var(--bg2);border-radius:12px;border:1px solid var(--border);padding:24px}
+.form-grid{display:flex;flex-wrap:wrap;gap:16px}
+.field-full{width:100%}
+.field-half{width:100%;flex:1 1 280px}
+.field-third{width:100%;flex:1 1 180px}
+label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#777;margin-bottom:6px;font-family:var(--font-sans);font-weight:600}
+.amount-wrap{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+.amount-prefix{padding:12px 0 12px 16px;font-size:22px;color:var(--gold);font-weight:600;font-family:var(--font-serif)}
+.amount-input{flex:1;background:transparent;border:none;padding:12px 16px;font-size:22px;color:var(--text-bright);font-family:var(--font-serif);font-weight:600}
+.text-input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--text)}
+.cat-grid{display:flex;flex-wrap:wrap;gap:6px}
+.cat-btn{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1.5px solid transparent;background:var(--bg2);color:#ccc;font-size:12px;transition:all .15s}
+.cat-btn:hover{background:var(--bg)}
+.form-actions{margin-top:20px;display:flex;justify-content:flex-end;gap:10px}
+.cancel-btn{padding:10px 20px;background:transparent;border:1px solid var(--border2);border-radius:8px;color:#999;font-size:14px}
+.submit-btn{padding:10px 28px;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dark) 100%);border:none;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;transition:opacity .2s}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Filters */
+.filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.search-input{flex:1 1 160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text)}
+.select-input{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;color:#ccc;min-width:120px}
+.select-input option{background:var(--bg2);color:var(--text)}
+.summary-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:12px;color:var(--text-dimmer);font-family:var(--font-sans);border-bottom:1px solid #1a1a2e;margin-bottom:8px}
+.summary-total{color:var(--gold);font-weight:600;font-size:14px}
+
+/* Expense list */
+.expense-list{display:flex;flex-direction:column;gap:6px}
+.expense-card{display:flex;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--border);transition:border-color .15s}
+.expense-card:hover{border-color:var(--border2)}
+.cat-stripe{width:4px;flex-shrink:0}
+.expense-body{flex:1;padding:12px 16px}
+.expense-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.expense-desc{font-size:15px;font-weight:500;color:var(--text-bright);margin-bottom:6px}
+.expense-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cat-tag{font-size:11px;padding:2px 8px;border-radius:12px;font-family:var(--font-sans);font-weight:500}
+.expense-date{font-size:11px;color:var(--text-dimmer);font-family:var(--font-sans)}
+.added-by-tag{font-size:10px;color:var(--text-dimmest);font-family:var(--font-sans);background:var(--bg);padding:1px 6px;border-radius:8px}
+.expense-notes{font-size:12px;color:#777;margin-top:6px;font-style:italic;font-family:var(--font-sans)}
+.expense-right{text-align:right;flex-shrink:0}
+.expense-amount{font-size:16px;font-weight:600;color:var(--gold);margin-bottom:6px;white-space:nowrap}
+.expense-actions{display:flex;gap:4px;justify-content:flex-end}
+.icon-btn{background:transparent;border:none;font-size:14px;padding:2px 6px;border-radius:4px;opacity:.5;transition:opacity .15s}
+.icon-btn:hover{opacity:1}
+
+/* Guest list */
+.guest-card{display:flex;background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--border);transition:border-color .15s}
+.guest-card:hover{border-color:var(--border2)}
+.guest-stripe{width:4px;flex-shrink:0}
+.guest-body{flex:1;padding:12px 16px}
+.guest-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.guest-name{font-size:15px;font-weight:500;color:var(--text-bright);margin-bottom:4px}
+.guest-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.guest-detail{font-size:12px;color:var(--text-dim);font-family:var(--font-sans)}
+.guest-right{text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.guest-count{font-size:15px;font-weight:600;color:var(--text-bright);font-family:var(--font-sans)}
+.rsvp-tag{font-size:11px;padding:3px 10px;border-radius:12px;font-family:var(--font-sans);font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.rsvp-confirmed{background:#8BC49A25;color:#8BC49A}
+.rsvp-pending{background:#E8C46C25;color:#E8C46C}
+.rsvp-declined{background:#E0708825;color:#E07088}
+
+/* Side tags */
+.side-tag{font-size:11px;padding:2px 8px;border-radius:12px;font-family:var(--font-sans);font-weight:500}
+.side-bride{background:#C084B825;color:#C084B8}
+.side-groom{background:#7CB8C425;color:#7CB8C4}
+.side-mutual{background:#A0A0D025;color:#A0A0D0}
+
+/* Empty */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-dimmest)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-text{font-size:14px;font-family:var(--font-sans)}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat-icon{font-size:22px;margin-bottom:6px}
+.stat-value{font-size:20px;font-weight:600;color:var(--text-bright)}
+.stat-label{font-size:11px;color:#777;margin-top:4px;font-family:var(--font-sans);text-transform:uppercase;letter-spacing:.05em}
+
+/* Breakdown */
+.breakdown-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.breakdown-title{font-size:16px;font-weight:600;margin-bottom:20px;color:var(--text-bright)}
+.breakdown-list{display:flex;flex-direction:column;gap:16px}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.breakdown-info{display:flex;align-items:center;gap:10px;min-width:140px}
+.breakdown-label{font-size:13px;color:var(--text);font-family:var(--font-sans)}
+.breakdown-count{font-size:11px;color:var(--text-dimmer);font-family:var(--font-sans)}
+.breakdown-right{display:flex;align-items:center;gap:12px;flex:1}
+.breakdown-amount{font-size:14px;font-weight:600;color:var(--gold);min-width:90px;text-align:right;font-family:var(--font-sans)}
+.bar-container{flex:1;height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.breakdown-pct{font-size:11px;color:var(--text-dim);min-width:42px;text-align:right;font-family:var(--font-sans)}
+
+.spinner-overlay{text-align:center;padding:40px;color:var(--text-dim);font-family:var(--font-sans);font-size:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+
+.hidden{display:none!important}
+@media(max-width:500px){
+  .header-inner{flex-direction:column}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .breakdown-row{flex-direction:column;align-items:flex-start;gap:8px}
+  .breakdown-right{width:100%}
+  .section-tabs{gap:4px}
+  .section-tab{padding:8px 12px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <h2>🪔 Welcome!</h2>
+    <p id="setupDesc">Enter your name to start tracking wedding expenses and guests together.</p>
+    <div class="field-full" style="margin-bottom:14px">
+      <label class="field-label">Your Name</label>
+      <input type="text" id="setupName" class="text-input" placeholder="e.g. Abhishek">
+    </div>
+    <div class="field-full" style="margin-bottom:14px" id="setupUrlField">
+      <label class="field-label">Google Apps Script URL</label>
+      <input type="text" id="setupUrl" class="text-input" placeholder="https://script.google.com/macros/s/...../exec">
+    </div>
+    <details style="margin-bottom:16px" id="setupHelp">
+      <summary style="font-size:12px;color:var(--gold);cursor:pointer;font-family:var(--font-sans);margin-bottom:8px">How do I get this URL? (setup guide)</summary>
+      <div class="step">
+        <strong>Step 1:</strong> Create a Google Sheet with two tabs: <code>Expenses</code> and <code>Guests</code><br>
+        <strong>Step 2:</strong> Add headers as described in the <code>google-apps-script.js</code> file<br>
+        <strong>Step 3:</strong> Go to <strong>Extensions → Apps Script</strong>, paste the script code<br>
+        <strong>Step 4:</strong> <strong>Deploy → New deployment → Web app</strong><br>
+        <strong>Step 5:</strong> Set "Execute as" = <strong>Me</strong>, "Who has access" = <strong>Anyone</strong><br>
+        <strong>Step 6:</strong> Copy the deployment URL and paste it above
+      </div>
+    </details>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="submit-btn" id="setupBtn" onclick="saveSetup()">Let's Go! 🎉</button>
+    </div>
+    <p id="setupError" class="hidden" style="color:#E07088;font-size:12px;margin-top:10px;font-family:var(--font-sans)"></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <h1>🪔 Wedding Planner</h1>
+      <p class="subtitle" id="headerSubtitle">Loading...</p>
+    </div>
+    <div class="header-actions">
+      <span class="sync-badge sync-loading" id="syncBadge">⟳ Syncing...</span>
+      <span class="user-badge" id="userBadge"></span>
+      <button class="header-btn" onclick="refreshAll()" title="Refresh">⟳</button>
+      <button class="header-btn" id="exportBtn" onclick="exportCSV()">↓ CSV</button>
+      <button class="header-btn" onclick="resetSetup()" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <!-- Section switcher -->
+  <div class="section-tabs">
+    <button class="section-tab active" data-section="expenses" onclick="switchSection('expenses')">💰 Expenses</button>
+    <button class="section-tab" data-section="guests" onclick="switchSection('guests')">👥 Guest List</button>
+  </div>
+
+  <!-- Expense sub-tabs -->
+  <div class="tabs" id="expenseTabs">
+    <button class="tab active" data-tab="exp-add" onclick="switchTab('exp-add')"><span>+</span> Add Bill</button>
+    <button class="tab" data-tab="exp-list" onclick="switchTab('exp-list')"><span>📄</span> <span id="expListLabel">All Bills (0)</span></button>
+    <button class="tab" data-tab="exp-analytics" onclick="switchTab('exp-analytics')"><span>📊</span> Analytics</button>
+  </div>
+
+  <!-- Guest sub-tabs -->
+  <div class="tabs hidden" id="guestTabs">
+    <button class="tab active" data-tab="guest-add" onclick="switchTab('guest-add')"><span>+</span> Add Guest</button>
+    <button class="tab" data-tab="guest-list" onclick="switchTab('guest-list')"><span>📋</span> <span id="guestListLabel">All Guests (0)</span></button>
+    <button class="tab" data-tab="guest-summary" onclick="switchTab('guest-summary')"><span>📊</span> Summary</button>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- ════════════════ EXPENSE VIEWS ════════════════ -->
+
+  <div id="view-exp-add">
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field-full">
+          <label class="field-label">Amount (₹) *</label>
+          <div class="amount-wrap">
+            <span class="amount-prefix">₹</span>
+            <input type="number" id="expAmount" class="amount-input" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="field-full">
+          <label class="field-label">What was it for? *</label>
+          <input type="text" id="expDesc" class="text-input" placeholder='e.g. "Mandap decoration", "Caterer advance"'>
+        </div>
+        <div class="field-full">
+          <label class="field-label">Category</label>
+          <div class="cat-grid" id="catGrid"></div>
+        </div>
+        <div class="field-half">
+          <label class="field-label">Date</label>
+          <input type="date" id="expDate" class="text-input">
+        </div>
+        <div class="field-half">
+          <label class="field-label">Notes (optional)</label>
+          <input type="text" id="expNotes" class="text-input" placeholder="Bill #, vendor name, etc.">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="cancel-btn hidden" id="expCancelBtn" onclick="expCancelEdit()">Cancel</button>
+        <button class="submit-btn" id="expSubmitBtn" onclick="expSubmit()" disabled>Add Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-exp-list" class="hidden">
+    <div id="expListEmpty" class="empty-state"><div class="empty-icon">📋</div><p class="empty-text">No expenses yet. Add your first bill!</p></div>
+    <div id="expListContent" class="hidden">
+      <div class="filter-bar">
+        <input type="text" class="search-input" id="expSearch" placeholder="Search bills..." oninput="renderExpList()">
+        <select class="select-input" id="expFilterCat" onchange="renderExpList()"><option value="all">All Categories</option></select>
+        <select class="select-input" id="expSort" onchange="renderExpList()">
+          <option value="date-desc">Newest</option><option value="date-asc">Oldest</option>
+          <option value="amount-desc">Highest ₹</option><option value="amount-asc">Lowest ₹</option>
+        </select>
+      </div>
+      <div class="summary-bar"><span id="expFilteredCount"></span><span class="summary-total" id="expFilteredTotal"></span></div>
+      <div class="expense-list" id="expListEl"></div>
+    </div>
+  </div>
+
+  <div id="view-exp-analytics" class="hidden">
+    <div id="expAnalyticsEmpty" class="empty-state"><div class="empty-icon">📊</div><p class="empty-text">Add expenses to see analytics.</p></div>
+    <div id="expAnalyticsContent" class="hidden">
+      <div class="stats-grid" id="expStatsGrid"></div>
+      <div class="breakdown-card"><h3 class="breakdown-title">Category Breakdown</h3><div class="breakdown-list" id="expBreakdownList"></div></div>
+    </div>
+  </div>
+
+  <!-- ════════════════ GUEST VIEWS ════════════════ -->
+
+  <div id="view-guest-add" class="hidden">
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field-full">
+          <label class="field-label">Guest / Family Name *</label>
+          <input type="text" id="guestName" class="text-input" placeholder='e.g. "Ramesh Uncle & Family"'>
+        </div>
+        <div class="field-third">
+          <label class="field-label">Phone</label>
+          <input type="text" id="guestPhone" class="text-input" placeholder="+91 98765 43210">
+        </div>
+        <div class="field-third">
+          <label class="field-label">Side</label>
+          <select id="guestSide" class="text-input">
+            <option value="bride">Bride's Side</option>
+            <option value="groom">Groom's Side</option>
+            <option value="mutual">Mutual / Friends</option>
+          </select>
+        </div>
+        <div class="field-third">
+          <label class="field-label">Relation</label>
+          <input type="text" id="guestRelation" class="text-input" placeholder="e.g. Uncle, Colleague">
+        </div>
+        <div class="field-half">
+          <label class="field-label">Number of Guests</label>
+          <input type="number" id="guestCount" class="text-input" value="1" min="1" max="50">
+        </div>
+        <div class="field-half">
+          <label class="field-label">RSVP Status</label>
+          <select id="guestRsvp" class="text-input">
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="declined">Declined</option>
+          </select>
+        </div>
+        <div class="field-full">
+          <label class="field-label">Notes (optional)</label>
+          <input type="text" id="guestNotes" class="text-input" placeholder="Dietary needs, travel plans, etc.">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="cancel-btn hidden" id="guestCancelBtn" onclick="guestCancelEdit()">Cancel</button>
+        <button class="submit-btn" id="guestSubmitBtn" onclick="guestSubmit()" disabled>Add Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-guest-list" class="hidden">
+    <div id="guestListEmpty" class="empty-state"><div class="empty-icon">👥</div><p class="empty-text">No guests yet. Start adding your guest list!</p></div>
+    <div id="guestListContent" class="hidden">
+      <div class="filter-bar">
+        <input type="text" class="search-input" id="guestSearch" placeholder="Search guests..." oninput="renderGuestList()">
+        <select class="select-input" id="guestFilterSide" onchange="renderGuestList()">
+          <option value="all">All Sides</option>
+          <option value="bride">Bride's Side</option>
+          <option value="groom">Groom's Side</option>
+          <option value="mutual">Mutual</option>
+        </select>
+        <select class="select-input" id="guestFilterRsvp" onchange="renderGuestList()">
+          <option value="all">All RSVP</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="pending">Pending</option>
+          <option value="declined">Declined</option>
+        </select>
+      </div>
+      <div class="summary-bar"><span id="guestFilteredCount"></span><span class="summary-total" id="guestFilteredTotal"></span></div>
+      <div class="expense-list" id="guestListEl"></div>
+    </div>
+  </div>
+
+  <div id="view-guest-summary" class="hidden">
+    <div id="guestSummaryEmpty" class="empty-state"><div class="empty-icon">📊</div><p class="empty-text">Add guests to see the summary.</p></div>
+    <div id="guestSummaryContent" class="hidden">
+      <div class="stats-grid" id="guestStatsGrid"></div>
+      <div class="breakdown-card"><h3 class="breakdown-title">By Side</h3><div class="breakdown-list" id="guestSideBreakdown"></div></div>
+      <div class="breakdown-card"><h3 class="breakdown-title">RSVP Status</h3><div class="breakdown-list" id="guestRsvpBreakdown"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONFIG: Paste your Google Apps Script URL below.
+//  Once set, users only need to enter their name — no URL needed.
+//  Leave empty ("") to show the URL field in setup.
+// ══════════════════════════════════════════════════════════════
+const HARDCODED_API_URL = "";
+// Example: const HARDCODED_API_URL = "https://script.google.com/macros/s/AKfycbxxICxnrEdNohVRwq4GOEmAiqxplbShc_7d5RJK4-AaSrhvPy1kk7Ozd6D_ToNPbw8x/exec";
+// ══════════════════════════════════════════════════════════════
+
+// ── Data ──
+const CATEGORIES=[
+  {id:"venue",label:"Venue & Decor",icon:"🏛️",color:"#D4A574"},
+  {id:"catering",label:"Catering & Food",icon:"🍽️",color:"#E8927C"},
+  {id:"clothing",label:"Clothing & Jewelry",icon:"👗",color:"#C084B8"},
+  {id:"photo",label:"Photo & Video",icon:"📸",color:"#7CB8C4"},
+  {id:"music",label:"Music & Entertainment",icon:"🎵",color:"#8BC49A"},
+  {id:"flowers",label:"Flowers & Mehendi",icon:"💐",color:"#E8C46C"},
+  {id:"transport",label:"Transport & Travel",icon:"🚗",color:"#A0A0D0"},
+  {id:"rituals",label:"Rituals & Pooja",icon:"🪔",color:"#F0A060"},
+  {id:"gifts",label:"Gifts & Favors",icon:"🎁",color:"#E07088"},
+  {id:"misc",label:"Miscellaneous",icon:"📋",color:"#90B0B0"},
+];
+const SIDES=[{id:"bride",label:"Bride's Side",color:"#C084B8"},{id:"groom",label:"Groom's Side",color:"#7CB8C4"},{id:"mutual",label:"Mutual / Friends",color:"#A0A0D0"}];
+const RSVPS=[{id:"confirmed",label:"Confirmed",color:"#8BC49A"},{id:"pending",label:"Pending",color:"#E8C46C"},{id:"declined",label:"Declined",color:"#E07088"}];
+
+let API_URL="",USER_NAME="";
+let expenses=[],guests=[];
+let selectedCat="venue";
+let expEditId=null, guestEditId=null;
+let currentSection="expenses";
+
+const fmt=n=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n);
+const fmtDate=s=>new Date(s).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+const esc=s=>String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const today=()=>new Date().toISOString().split("T")[0];
+const $=id=>document.getElementById(id);
+
+// ── Setup ──
+function checkSetup(){
+  API_URL=HARDCODED_API_URL||(localStorage.getItem("wedding_api_url")||"").trim().replace(/\/+$/,"");
+  USER_NAME=(localStorage.getItem("wedding_user_name")||"").trim();
+  if(API_URL&&USER_NAME){$("setupOverlay").classList.add("hidden");$("userBadge").textContent=USER_NAME;initApp();}
+  else {
+    $("setupOverlay").classList.remove("hidden");
+    // If URL is hardcoded, hide the URL field and help — just ask for name
+    if(HARDCODED_API_URL){
+      $("setupUrlField").classList.add("hidden");
+      $("setupHelp").classList.add("hidden");
+      $("setupDesc").textContent="Enter your name to start tracking wedding expenses and guests together.";
+    } else {
+      $("setupDesc").textContent="Enter your name and the Google Apps Script URL to connect to the shared wedding planner.";
+    }
+  }
+}
+function saveSetup(){
+  const name=$("setupName").value.trim();
+  if(!name){$("setupError").textContent="Please enter your name.";$("setupError").classList.remove("hidden");return}
+
+  let url=HARDCODED_API_URL;
+  if(!url){
+    url=$("setupUrl").value.trim().replace(/\/+$/,"");
+    if(!url){$("setupError").textContent="Please enter the Apps Script URL.";$("setupError").classList.remove("hidden");return}
+    if(!url.startsWith("https://script.google.com/")){$("setupError").textContent="URL should start with https://script.google.com/";$("setupError").classList.remove("hidden");return}
+    localStorage.setItem("wedding_api_url",url);
+  }
+  localStorage.setItem("wedding_user_name",name);
+  API_URL=url;USER_NAME=name;$("setupOverlay").classList.add("hidden");$("userBadge").textContent=USER_NAME;initApp();
+}
+function resetSetup(){if(confirm("Reset connection settings?")){localStorage.removeItem("wedding_api_url");localStorage.removeItem("wedding_user_name");location.reload()}}
+
+// ── API ──
+function setSyncStatus(s,m){const b=$("syncBadge");b.className="sync-badge sync-"+s;b.textContent=m}
+
+async function apiRequest(url){
+  const r=await fetch(url,{redirect:"follow"});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return await r.json();
+}
+
+async function apiFetch(sheet,action,data){
+  setSyncStatus("loading","⟳ Syncing...");
+  try{
+    let url=API_URL+"?action="+encodeURIComponent(action)+"&sheet="+encodeURIComponent(sheet);
+    if(data && action!=="get"){
+      url+="&payload="+encodeURIComponent(JSON.stringify(data));
+    }
+    console.log("API request:",action,sheet);
+    const d=await apiRequest(url);
+    console.log("API response:",action,sheet,d);
+    const label=action==="get"?"Synced":"Saved";
+    setSyncStatus("ok","✓ "+label);setTimeout(()=>setSyncStatus("ok","✓ Live"),2000);
+    return d;
+  }catch(e){
+    console.error("API error:",e);
+    setSyncStatus("error","✗ "+e.message);
+    return{items:[],error:e.message};
+  }
+}
+
+async function loadExpenses(){
+  const d=await apiFetch("expenses","get");
+  console.log("RAW expenses response:",JSON.stringify(d));
+  expenses=(d.items||[]).map(e=>({...e,amount:Number(e.amount),id:String(e.id)}));
+  console.log("Parsed expenses:",expenses.length,"items");
+}
+async function loadGuests(){
+  const d=await apiFetch("guests","get");
+  console.log("RAW guests response:",JSON.stringify(d));
+  guests=(d.items||[]).map(g=>({...g,guests:Number(g.guests)||1,id:String(g.id)}));
+  console.log("Parsed guests:",guests.length,"items");
+}
+
+async function refreshAll(){
+  await Promise.all([loadExpenses(),loadGuests()]);
+  updateHeader();
+  // Always render both sections so data is ready when switching tabs
+  renderExpList();renderExpAnalytics();
+  renderGuestList();renderGuestSummary();
+}
+
+function updateHeader(){
+  const total=expenses.reduce((s,e)=>s+e.amount,0);
+  const gTotal=guests.reduce((s,g)=>s+g.guests,0);
+  $("headerSubtitle").textContent=`${fmt(total)} spent · ${guests.length} invitations (${gTotal} guests)`;
+  $("expListLabel").textContent=`All Bills (${expenses.length})`;
+  $("guestListLabel").textContent=`All Guests (${guests.length})`;
+}
+
+// ── Section / Tab switching ──
+function switchSection(s){
+  currentSection=s;
+  document.querySelectorAll(".section-tab").forEach(t=>t.classList.toggle("active",t.dataset.section===s));
+  $("expenseTabs").classList.toggle("hidden",s!=="expenses");
+  $("guestTabs").classList.toggle("hidden",s!=="guests");
+  // Hide all views
+  document.querySelectorAll("[id^='view-']").forEach(v=>v.classList.add("hidden"));
+  if(s==="expenses"){$("view-exp-add").classList.remove("hidden");setActiveTab("expenseTabs","exp-add");refreshAll();}
+  else{$("view-guest-add").classList.remove("hidden");setActiveTab("guestTabs","guest-add");refreshAll();}
+}
+function setActiveTab(tabsId,tabId){
+  $(""+tabsId).querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tabId));
+}
+function switchTab(tabId){
+  document.querySelectorAll("[id^='view-']").forEach(v=>v.classList.add("hidden"));
+  $("view-"+tabId).classList.remove("hidden");
+  const tabsId=tabId.startsWith("exp")?"expenseTabs":"guestTabs";
+  setActiveTab(tabsId,tabId);
+  if(tabId==="exp-list")renderExpList();
+  if(tabId==="exp-analytics")renderExpAnalytics();
+  if(tabId==="guest-list")renderGuestList();
+  if(tabId==="guest-summary")renderGuestSummary();
+}
+
+// ── Init ──
+function initApp(){
+  $("expDate").value=today();
+  buildCatGrid();buildFilterCat();
+  $("expAmount").addEventListener("input",updateExpSubmit);
+  $("expDesc").addEventListener("input",updateExpSubmit);
+  $("expAmount").addEventListener("keydown",e=>{if(e.key==="Enter")expSubmit()});
+  $("expDesc").addEventListener("keydown",e=>{if(e.key==="Enter")expSubmit()});
+  $("guestName").addEventListener("input",updateGuestSubmit);
+  $("guestName").addEventListener("keydown",e=>{if(e.key==="Enter")guestSubmit()});
+  refreshAll();
+  setInterval(refreshAll,30000);
+}
+
+// ── Expense form ──
+function buildCatGrid(){
+  $("catGrid").innerHTML=CATEGORIES.map(c=>`<button class="cat-btn" data-cat="${c.id}" style="${c.id===selectedCat?`border-color:${c.color};background:${c.color}18`:""}" onclick="selectCat('${c.id}')"><span style="font-size:16px">${c.icon}</span><span>${esc(c.label)}</span></button>`).join("");
+}
+function buildFilterCat(){$("expFilterCat").innerHTML=`<option value="all">All Categories</option>`+CATEGORIES.map(c=>`<option value="${c.id}">${c.icon} ${esc(c.label)}</option>`).join("")}
+function selectCat(id){selectedCat=id;buildCatGrid()}
+function updateExpSubmit(){$("expSubmitBtn").disabled=!$("expAmount").value||!$("expDesc").value.trim()}
+function expResetForm(){$("expAmount").value="";$("expDesc").value="";$("expNotes").value="";$("expDate").value=today();selectedCat="venue";expEditId=null;buildCatGrid();updateExpSubmit();$("expSubmitBtn").textContent="Add Expense";$("expCancelBtn").classList.add("hidden")}
+function expCancelEdit(){expResetForm()}
+
+async function expSubmit(){
+  const amount=parseFloat($("expAmount").value),desc=$("expDesc").value.trim();
+  if(!amount||!desc)return;
+  $("expSubmitBtn").disabled=true;$("expSubmitBtn").textContent="Saving...";
+  const data={id:expEditId||Date.now().toString(),amount,description:desc,category:selectedCat,date:$("expDate").value,notes:$("expNotes").value.trim(),addedBy:USER_NAME};
+  await apiFetch("expenses",expEditId?"update":"add",data);
+  expResetForm();await refreshAll();
+}
+function expStartEdit(id){
+  const e=expenses.find(x=>String(x.id)===String(id));if(!e)return;
+  $("expAmount").value=e.amount;$("expDesc").value=e.description;$("expDate").value=e.date;$("expNotes").value=e.notes||"";
+  selectedCat=e.category;expEditId=e.id;buildCatGrid();updateExpSubmit();
+  $("expSubmitBtn").textContent="Update Entry";$("expCancelBtn").classList.remove("hidden");switchTab("exp-add");
+}
+async function expDelete(id){if(!confirm("Delete this expense?"))return;await apiFetch("expenses","delete",{id:String(id)});await refreshAll();renderExpList()}
+
+// ── Guest form ──
+function updateGuestSubmit(){$("guestSubmitBtn").disabled=!$("guestName").value.trim()}
+function guestResetForm(){$("guestName").value="";$("guestPhone").value="";$("guestSide").value="bride";$("guestRelation").value="";$("guestCount").value="1";$("guestRsvp").value="pending";$("guestNotes").value="";guestEditId=null;updateGuestSubmit();$("guestSubmitBtn").textContent="Add Guest";$("guestCancelBtn").classList.add("hidden")}
+function guestCancelEdit(){guestResetForm()}
+
+async function guestSubmit(){
+  const name=$("guestName").value.trim();if(!name)return;
+  $("guestSubmitBtn").disabled=true;$("guestSubmitBtn").textContent="Saving...";
+  const data={id:guestEditId||Date.now().toString(),name,phone:$("guestPhone").value.trim(),side:$("guestSide").value,relation:$("guestRelation").value.trim(),guests:parseInt($("guestCount").value)||1,rsvp:$("guestRsvp").value,notes:$("guestNotes").value.trim(),addedBy:USER_NAME};
+  await apiFetch("guests",guestEditId?"update":"add",data);
+  guestResetForm();await refreshAll();
+}
+function guestStartEdit(id){
+  const g=guests.find(x=>String(x.id)===String(id));if(!g)return;
+  $("guestName").value=g.name;$("guestPhone").value=g.phone||"";$("guestSide").value=g.side||"bride";$("guestRelation").value=g.relation||"";$("guestCount").value=g.guests||1;$("guestRsvp").value=g.rsvp||"pending";$("guestNotes").value=g.notes||"";
+  guestEditId=g.id;updateGuestSubmit();$("guestSubmitBtn").textContent="Update Guest";$("guestCancelBtn").classList.remove("hidden");switchTab("guest-add");
+}
+async function guestDelete(id){if(!confirm("Remove this guest?"))return;await apiFetch("guests","delete",{id:String(id)});await refreshAll();renderGuestList()}
+async function guestToggleRsvp(id){
+  const g=guests.find(x=>String(x.id)===String(id));if(!g)return;
+  const cycle={pending:"confirmed",confirmed:"declined",declined:"pending"};
+  g.rsvp=cycle[g.rsvp]||"pending";
+  await apiFetch("guests","update",{...g,addedBy:USER_NAME});
+  await refreshAll();renderGuestList();
+}
+
+// ── Render: Expense List ──
+function renderExpList(){
+  const has=expenses.length>0;
+  $("expListEmpty").classList.toggle("hidden",has);$("expListContent").classList.toggle("hidden",!has);
+  if(!has)return;
+  const s=$("expSearch").value.toLowerCase(),cat=$("expFilterCat").value,sort=$("expSort").value;
+  let list=[...expenses];
+  if(cat!=="all")list=list.filter(e=>e.category===cat);
+  if(s)list=list.filter(e=>e.description.toLowerCase().includes(s)||(e.notes||"").toLowerCase().includes(s));
+  list.sort((a,b)=>{if(sort==="date-desc")return new Date(b.date)-new Date(a.date);if(sort==="date-asc")return new Date(a.date)-new Date(b.date);if(sort==="amount-desc")return b.amount-a.amount;return a.amount-b.amount});
+  $("expFilteredCount").textContent=`${list.length} expense${list.length!==1?"s":""}`;
+  $("expFilteredTotal").textContent=fmt(list.reduce((s,e)=>s+e.amount,0));
+  $("expListEl").innerHTML=list.map(e=>{
+    const c=CATEGORIES.find(x=>x.id===e.category)||CATEGORIES[9];
+    return `<div class="expense-card"><div class="cat-stripe" style="background:${c.color}"></div><div class="expense-body"><div class="expense-top"><div>
+      <div class="expense-desc">${esc(e.description)}</div>
+      <div class="expense-meta"><span class="cat-tag" style="background:${c.color}25;color:${c.color}">${c.icon} ${esc(c.label)}</span><span class="expense-date">${fmtDate(e.date)}</span>${e.addedBy?`<span class="added-by-tag">by ${esc(e.addedBy)}</span>`:""}</div>
+      ${e.notes?`<div class="expense-notes">${esc(e.notes)}</div>`:""}
+    </div><div class="expense-right"><div class="expense-amount">${fmt(e.amount)}</div><div class="expense-actions"><button class="icon-btn" onclick="expStartEdit('${e.id}')">✏️</button><button class="icon-btn" onclick="expDelete('${e.id}')">🗑️</button></div></div></div></div></div>`}).join("");
+}
+
+// ── Render: Expense Analytics ──
+function renderExpAnalytics(){
+  const has=expenses.length>0;
+  $("expAnalyticsEmpty").classList.toggle("hidden",has);$("expAnalyticsContent").classList.toggle("hidden",!has);
+  if(!has)return;
+  const total=expenses.reduce((s,e)=>s+e.amount,0);
+  $("expStatsGrid").innerHTML=[{l:"Total Spent",v:fmt(total),i:"💰"},{l:"Total Bills",v:expenses.length,i:"🧾"},{l:"Average",v:fmt(total/expenses.length),i:"📐"},{l:"Largest",v:fmt(Math.max(...expenses.map(e=>e.amount))),i:"🔝"}].map(s=>`<div class="stat-card"><div class="stat-icon">${s.i}</div><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join("");
+  const byC={};CATEGORIES.forEach(c=>{byC[c.id]=0});expenses.forEach(e=>{byC[e.category]=(byC[e.category]||0)+e.amount});
+  const bd=CATEGORIES.map(c=>({...c,total:byC[c.id]||0,pct:total>0?((byC[c.id]||0)/total*100):0})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
+  $("expBreakdownList").innerHTML=bd.map(c=>{const cnt=expenses.filter(e=>e.category===c.id).length;return `<div class="breakdown-row"><div class="breakdown-info"><span style="font-size:18px">${c.icon}</span><div><div class="breakdown-label">${esc(c.label)}</div><div class="breakdown-count">${cnt} bill${cnt!==1?"s":""}</div></div></div><div class="breakdown-right"><div class="breakdown-amount">${fmt(c.total)}</div><div class="bar-container"><div class="bar-fill" style="width:${c.pct}%;background:${c.color}"></div></div><div class="breakdown-pct">${c.pct.toFixed(1)}%</div></div></div>`}).join("");
+}
+
+// ── Render: Guest List ──
+function renderGuestList(){
+  const has=guests.length>0;
+  $("guestListEmpty").classList.toggle("hidden",has);$("guestListContent").classList.toggle("hidden",!has);
+  if(!has)return;
+  const s=$("guestSearch").value.toLowerCase(),side=$("guestFilterSide").value,rsvp=$("guestFilterRsvp").value;
+  let list=[...guests];
+  if(side!=="all")list=list.filter(g=>g.side===side);
+  if(rsvp!=="all")list=list.filter(g=>g.rsvp===rsvp);
+  if(s)list=list.filter(g=>g.name.toLowerCase().includes(s)||(g.relation||"").toLowerCase().includes(s)||(g.notes||"").toLowerCase().includes(s));
+  list.sort((a,b)=>a.name.localeCompare(b.name));
+  const totalGuests=list.reduce((s,g)=>s+g.guests,0);
+  $("guestFilteredCount").textContent=`${list.length} invitation${list.length!==1?"s":""}`;
+  $("guestFilteredTotal").textContent=`${totalGuests} guests total`;
+  $("guestListEl").innerHTML=list.map(g=>{
+    const sideInfo=SIDES.find(x=>x.id===g.side)||SIDES[2];
+    const rsvpClass="rsvp-"+(g.rsvp||"pending");
+    return `<div class="guest-card"><div class="guest-stripe" style="background:${sideInfo.color}"></div><div class="guest-body"><div class="guest-top"><div>
+      <div class="guest-name">${esc(g.name)}</div>
+      <div class="guest-meta">
+        <span class="side-tag side-${g.side||"mutual"}">${esc(sideInfo.label)}</span>
+        ${g.relation?`<span class="guest-detail">${esc(g.relation)}</span>`:""}
+        ${g.phone?`<span class="guest-detail">📞 ${esc(g.phone)}</span>`:""}
+        ${g.addedBy?`<span class="added-by-tag">by ${esc(g.addedBy)}</span>`:""}
+      </div>
+      ${g.notes?`<div class="expense-notes">${esc(g.notes)}</div>`:""}
+    </div><div class="guest-right">
+      <div class="guest-count">${g.guests} 👤</div>
+      <button class="rsvp-tag ${rsvpClass}" onclick="guestToggleRsvp('${g.id}')">${(g.rsvp||"pending").toUpperCase()}</button>
+      <div class="expense-actions"><button class="icon-btn" onclick="guestStartEdit('${g.id}')">✏️</button><button class="icon-btn" onclick="guestDelete('${g.id}')">🗑️</button></div>
+    </div></div></div></div>`}).join("");
+}
+
+// ── Render: Guest Summary ──
+function renderGuestSummary(){
+  const has=guests.length>0;
+  $("guestSummaryEmpty").classList.toggle("hidden",has);$("guestSummaryContent").classList.toggle("hidden",!has);
+  if(!has)return;
+  const totalPeople=guests.reduce((s,g)=>s+g.guests,0);
+  const confirmed=guests.filter(g=>g.rsvp==="confirmed");
+  const confirmedPeople=confirmed.reduce((s,g)=>s+g.guests,0);
+  const pending=guests.filter(g=>g.rsvp==="pending");
+  const pendingPeople=pending.reduce((s,g)=>s+g.guests,0);
+
+  $("guestStatsGrid").innerHTML=[
+    {l:"Invitations",v:guests.length,i:"💌"},
+    {l:"Total Guests",v:totalPeople,i:"👥"},
+    {l:"Confirmed",v:confirmedPeople,i:"✅"},
+    {l:"Pending",v:pendingPeople,i:"⏳"},
+  ].map(s=>`<div class="stat-card"><div class="stat-icon">${s.i}</div><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join("");
+
+  // By side
+  $("guestSideBreakdown").innerHTML=SIDES.map(s=>{
+    const sg=guests.filter(g=>g.side===s.id);const cnt=sg.reduce((a,g)=>a+g.guests,0);
+    const pct=totalPeople>0?(cnt/totalPeople*100):0;
+    return `<div class="breakdown-row"><div class="breakdown-info"><div><div class="breakdown-label">${esc(s.label)}</div><div class="breakdown-count">${sg.length} invitation${sg.length!==1?"s":""}</div></div></div><div class="breakdown-right"><div class="breakdown-amount" style="color:${s.color}">${cnt} guests</div><div class="bar-container"><div class="bar-fill" style="width:${pct}%;background:${s.color}"></div></div><div class="breakdown-pct">${pct.toFixed(0)}%</div></div></div>`;
+  }).join("");
+
+  // By RSVP
+  $("guestRsvpBreakdown").innerHTML=RSVPS.map(r=>{
+    const rg=guests.filter(g=>g.rsvp===r.id);const cnt=rg.reduce((a,g)=>a+g.guests,0);
+    const pct=totalPeople>0?(cnt/totalPeople*100):0;
+    return `<div class="breakdown-row"><div class="breakdown-info"><div><div class="breakdown-label">${esc(r.label)}</div><div class="breakdown-count">${rg.length} invitation${rg.length!==1?"s":""}</div></div></div><div class="breakdown-right"><div class="breakdown-amount" style="color:${r.color}">${cnt} guests</div><div class="bar-container"><div class="bar-fill" style="width:${pct}%;background:${r.color}"></div></div><div class="breakdown-pct">${pct.toFixed(0)}%</div></div></div>`;
+  }).join("");
+}
+
+// ── Export ──
+function exportCSV(){
+  if(currentSection==="expenses"){
+    const h="Date,Category,Description,Amount (INR),Notes,Added By\n";
+    const r=[...expenses].sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>{const c=CATEGORIES.find(x=>x.id===e.category)||{label:e.category};return `${e.date},"${c.label}","${e.description}",${e.amount},"${e.notes||""}","${e.addedBy||""}"`}).join("\n");
+    dl(h+r,"wedding-expenses.csv");
+  } else {
+    const h="Name,Phone,Side,Relation,Guests,RSVP,Notes,Added By\n";
+    const r=[...guests].sort((a,b)=>a.name.localeCompare(b.name)).map(g=>`"${g.name}","${g.phone||""}","${g.side||""}","${g.relation||""}",${g.guests},"${g.rsvp||""}","${g.notes||""}","${g.addedBy||""}"`).join("\n");
+    dl(h+r,"wedding-guests.csv");
+  }
+}
+function dl(csv,name){const b=new Blob([csv],{type:"text/csv"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+
+checkSetup();
+</script>
+</body>
+</html>
