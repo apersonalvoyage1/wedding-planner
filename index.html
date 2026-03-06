@@ -387,7 +387,7 @@ label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-s
 //  Leave empty ("") to show the URL field in setup.
 // ══════════════════════════════════════════════════════════════
 const HARDCODED_API_URL = "https://script.google.com/macros/s/AKfycbxxICxnrEdNohVRwq4GOEmAiqxplbShc_7d5RJK4-AaSrhvPy1kk7Ozd6D_ToNPbw8x/exec";
-// Example: const HARDCODED_API_URL = "https://script.google.com/macros/s/AKfycbxxICxnrEdNohVRwq4GOEmAiqxplbShc_7d5RJK4-AaSrhvPy1kk7Ozd6D_ToNPbw8x/exec";
+// Example: const HARDCODED_API_URL = "https://script.google.com/macros/s/ABC.../exec";
 // ══════════════════════════════════════════════════════════════
 
 // ── Data ──
@@ -451,13 +451,23 @@ function saveSetup(){
 }
 function resetSetup(){if(confirm("Reset connection settings?")){localStorage.removeItem("wedding_api_url");localStorage.removeItem("wedding_user_name");location.reload()}}
 
-// ── API ──
+// ── API (JSONP — follows Google Apps Script redirects reliably) ──
 function setSyncStatus(s,m){const b=$("syncBadge");b.className="sync-badge sync-"+s;b.textContent=m}
 
-async function apiRequest(url){
-  const r=await fetch(url,{redirect:"follow"});
-  if(!r.ok) throw new Error("HTTP "+r.status);
-  return await r.json();
+let _cbCount=0;
+function apiRequest(url){
+  return new Promise((resolve,reject)=>{
+    const cb="_wpcb"+(++_cbCount)+"_"+Date.now();
+    const timer=setTimeout(()=>{done();reject(new Error("Timed out"))},20000);
+    function done(){clearTimeout(timer);delete window[cb];const el=document.getElementById(cb);if(el)el.remove()}
+    window[cb]=function(data){done();resolve(data)};
+    const sep=url.includes("?")?"&":"?";
+    const script=document.createElement("script");
+    script.id=cb;
+    script.src=url+sep+"callback="+cb;
+    script.onerror=function(){done();reject(new Error("Failed to reach server"))};
+    document.head.appendChild(script);
+  });
 }
 
 async function apiFetch(sheet,action,data){
