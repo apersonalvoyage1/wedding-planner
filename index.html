@@ -452,76 +452,50 @@ function saveSetup(){
 function resetSetup(){if(confirm("Reset connection settings?")){localStorage.removeItem("wedding_api_url");localStorage.removeItem("wedding_user_name");location.reload()}}
 
 // ── API (JSONP — follows Google Apps Script redirects reliably) ──
+// ── API ──
 function setSyncStatus(s,m){const b=$("syncBadge");b.className="sync-badge sync-"+s;b.textContent=m}
 
-// Method 1: fetch with manual redirect handling
-async function fetchRequest(url){
-  // First request — Google returns 302 redirect
-  const r1=await fetch(url,{redirect:"manual"});
-  if(r1.type==="opaqueredirect"||r1.status===302||r1.status===301){
-    // Get redirect URL from a second attempt with follow
-    const r2=await fetch(url,{redirect:"follow"});
-    return await r2.json();
-  }
-  if(r1.ok) return await r1.json();
-  throw new Error("HTTP "+r1.status);
-}
-
-// Method 2: JSONP fallback
-let _cbCount=0;
-function jsonpRequest(url){
-  return new Promise((resolve,reject)=>{
-    const cb="_wpcb"+(++_cbCount)+"_"+Date.now();
-    const timer=setTimeout(()=>{done();reject(new Error("Timed out"))},20000);
-    function done(){clearTimeout(timer);delete window[cb];const el=document.getElementById(cb);if(el)el.remove()}
-    window[cb]=function(data){done();resolve(data)};
-    const sep=url.includes("?")?"&":"?";
-    const script=document.createElement("script");
-    script.id=cb;
-    script.src=url+sep+"callback="+cb;
-    script.onerror=function(){done();reject(new Error("JSONP failed"))};
-    document.head.appendChild(script);
-  });
-}
-
-// Method 3: XHR (some browsers handle redirects better via XHR)
-function xhrRequest(url){
-  return new Promise((resolve,reject)=>{
-    const xhr=new XMLHttpRequest();
-    xhr.open("GET",url,true);
-    xhr.timeout=20000;
-    xhr.onload=function(){
-      try{resolve(JSON.parse(xhr.responseText))}
-      catch(e){reject(new Error("Invalid response"))}
-    };
-    xhr.onerror=function(){reject(new Error("XHR failed"))};
-    xhr.ontimeout=function(){reject(new Error("XHR timed out"))};
-    xhr.send();
-  });
-}
-
-// Try all methods in sequence
+// Single reliable request method — Google Apps Script returns a redirect,
+// fetch with redirect:follow handles it. We use a single method to avoid
+// duplicate writes from cascading retries.
 async function apiRequest(url){
-  // Try fetch first
-  try{const d=await fetchRequest(url);return d}catch(e){console.warn("fetch failed:",e.message)}
-  // Try XHR
-  try{const d=await xhrRequest(url);return d}catch(e){console.warn("XHR failed:",e.message)}
-  // Try JSONP
-  const sep=url.includes("?")?"&":"?";
-  try{const d=await jsonpRequest(url);return d}catch(e){console.warn("JSONP failed:",e.message)}
-  throw new Error("All request methods failed — check browser console for details");
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),20000);
+  try{
+    const r=await fetch(url,{redirect:"follow",signal:controller.signal});
+    clearTimeout(timer);
+    const text=await r.text();
+    console.log("Raw response:",text.substring(0,200));
+    try{return JSON.parse(text)}catch(e){
+      // If response is JSONP-wrapped, extract JSON
+      const match=text.match(/^[^(]+\((.+)\)$/s);
+      if(match)return JSON.parse(match[1]);
+      throw new Error("Invalid response format");
+    }
+  }catch(e){
+    clearTimeout(timer);
+    throw e;
+  }
 }
+
+// Prevent double-submissions
+let _submitting=false;
 
 async function apiFetch(sheet,action,data){
+  // Block concurrent writes
+  if(action!=="get"){
+    if(_submitting){console.warn("Blocked duplicate submission");return{success:true};}
+    _submitting=true;
+  }
   setSyncStatus("loading","⟳ Syncing...");
   try{
     let url=API_URL+"?action="+encodeURIComponent(action)+"&sheet="+encodeURIComponent(sheet);
     if(data && action!=="get"){
       url+="&payload="+encodeURIComponent(JSON.stringify(data));
     }
-    console.log("API request:",action,sheet);
+    console.log("API call:",action,sheet);
     const d=await apiRequest(url);
-    console.log("API response:",action,sheet,d);
+    console.log("API result:",action,sheet,JSON.stringify(d).substring(0,300));
     const label=action==="get"?"Synced":"Saved";
     setSyncStatus("ok","✓ "+label);setTimeout(()=>setSyncStatus("ok","✓ Live"),2000);
     return d;
@@ -529,20 +503,42 @@ async function apiFetch(sheet,action,data){
     console.error("API error:",e);
     setSyncStatus("error","✗ "+e.message);
     return{items:[],error:e.message};
+  }finally{
+    if(action!=="get")_submitting=false;
   }
 }
 
 async function loadExpenses(){
   const d=await apiFetch("expenses","get");
-  console.log("RAW expenses response:",JSON.stringify(d));
-  expenses=(d.items||[]).map(e=>({...e,amount:Number(e.amount),id:String(e.id)}));
-  console.log("Parsed expenses:",expenses.length,"items");
+  console.log("Expenses raw:",JSON.stringify(d).substring(0,500));
+  const items=d.items||d.expenses||[];
+  expenses=items.map(e=>({
+    id:String(e.id||""),
+    amount:Number(e.amount)||0,
+    description:String(e.description||""),
+    category:String(e.category||"misc"),
+    date:String(e.date||"").substring(0,10)||today(),
+    notes:String(e.notes||""),
+    addedBy:String(e.addedBy||""),
+  })).filter(e=>e.id&&e.description);
+  console.log("Parsed expenses:",expenses.length);
 }
 async function loadGuests(){
   const d=await apiFetch("guests","get");
-  console.log("RAW guests response:",JSON.stringify(d));
-  guests=(d.items||[]).map(g=>({...g,guests:Number(g.guests)||1,id:String(g.id)}));
-  console.log("Parsed guests:",guests.length,"items");
+  console.log("Guests raw:",JSON.stringify(d).substring(0,500));
+  const items=d.items||d.guests||[];
+  guests=items.map(g=>({
+    id:String(g.id||""),
+    name:String(g.name||""),
+    phone:String(g.phone||""),
+    side:String(g.side||"mutual"),
+    relation:String(g.relation||""),
+    guests:Number(g.guests)||1,
+    rsvp:String(g.rsvp||"pending"),
+    notes:String(g.notes||""),
+    addedBy:String(g.addedBy||""),
+  })).filter(g=>g.id&&g.name);
+  console.log("Parsed guests:",guests.length);
 }
 
 async function refreshAll(){
@@ -597,7 +593,7 @@ function initApp(){
   $("guestName").addEventListener("input",updateGuestSubmit);
   $("guestName").addEventListener("keydown",e=>{if(e.key==="Enter")guestSubmit()});
   refreshAll();
-  setInterval(refreshAll,30000);
+  setInterval(refreshAll,60000); // refresh every 60s to avoid rate limits
 }
 
 // ── Expense form ──
@@ -610,13 +606,18 @@ function updateExpSubmit(){$("expSubmitBtn").disabled=!$("expAmount").value||!$(
 function expResetForm(){$("expAmount").value="";$("expDesc").value="";$("expNotes").value="";$("expDate").value=today();selectedCat="venue";expEditId=null;buildCatGrid();updateExpSubmit();$("expSubmitBtn").textContent="Add Expense";$("expCancelBtn").classList.add("hidden")}
 function expCancelEdit(){expResetForm()}
 
+let _expSubmitting=false;
 async function expSubmit(){
+  if(_expSubmitting)return;
   const amount=parseFloat($("expAmount").value),desc=$("expDesc").value.trim();
   if(!amount||!desc)return;
+  _expSubmitting=true;
   $("expSubmitBtn").disabled=true;$("expSubmitBtn").textContent="Saving...";
   const data={id:expEditId||Date.now().toString(),amount,description:desc,category:selectedCat,date:$("expDate").value,notes:$("expNotes").value.trim(),addedBy:USER_NAME};
   await apiFetch("expenses",expEditId?"update":"add",data);
-  expResetForm();await refreshAll();
+  expResetForm();
+  _expSubmitting=false;
+  await refreshAll();
 }
 function expStartEdit(id){
   const e=expenses.find(x=>String(x.id)===String(id));if(!e)return;
@@ -631,12 +632,17 @@ function updateGuestSubmit(){$("guestSubmitBtn").disabled=!$("guestName").value.
 function guestResetForm(){$("guestName").value="";$("guestPhone").value="";$("guestSide").value="bride";$("guestRelation").value="";$("guestCount").value="1";$("guestRsvp").value="pending";$("guestNotes").value="";guestEditId=null;updateGuestSubmit();$("guestSubmitBtn").textContent="Add Guest";$("guestCancelBtn").classList.add("hidden")}
 function guestCancelEdit(){guestResetForm()}
 
+let _guestSubmitting=false;
 async function guestSubmit(){
+  if(_guestSubmitting)return;
   const name=$("guestName").value.trim();if(!name)return;
+  _guestSubmitting=true;
   $("guestSubmitBtn").disabled=true;$("guestSubmitBtn").textContent="Saving...";
   const data={id:guestEditId||Date.now().toString(),name,phone:$("guestPhone").value.trim(),side:$("guestSide").value,relation:$("guestRelation").value.trim(),guests:parseInt($("guestCount").value)||1,rsvp:$("guestRsvp").value,notes:$("guestNotes").value.trim(),addedBy:USER_NAME};
   await apiFetch("guests",guestEditId?"update":"add",data);
-  guestResetForm();await refreshAll();
+  guestResetForm();
+  _guestSubmitting=false;
+  await refreshAll();
 }
 function guestStartEdit(id){
   const g=guests.find(x=>String(x.id)===String(id));if(!g)return;
