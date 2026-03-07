@@ -173,6 +173,10 @@ label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-s
   <div class="setup-card">
     <h2>🪔 Welcome!</h2>
     <p id="setupDesc">Enter your name to start tracking wedding expenses and guests together.</p>
+    <div class="field-full" style="margin-bottom:14px" id="setupPasswordField" class="hidden">
+      <label class="field-label">Password</label>
+      <input type="password" id="setupPassword" class="text-input" placeholder="Enter access password">
+    </div>
     <div class="field-full" style="margin-bottom:14px">
       <label class="field-label">Your Name</label>
       <input type="text" id="setupName" class="text-input" placeholder="e.g. Abhishek">
@@ -388,6 +392,10 @@ label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-s
 // ══════════════════════════════════════════════════════════════
 const HARDCODED_API_URL = "https://script.google.com/macros/s/AKfycbyUKbEAL_yQ_7B9BMUMnurJ50AQThGrN-5VWU24Ze1uPMqq4H3ishdiCGNuuY_lSgEH9g/exec";
 // Example: const HARDCODED_API_URL = "https://script.google.com/macros/s/ABC.../exec";
+
+//  Set a shared password below. Leave empty ("") for no password.
+const ACCESS_PASSWORD = "abhi-deepu-wedding@2026";
+// Example: const ACCESS_PASSWORD = "wedding2026";
 // ══════════════════════════════════════════════════════════════
 
 // ── Data ──
@@ -422,20 +430,44 @@ const $=id=>document.getElementById(id);
 function checkSetup(){
   API_URL=HARDCODED_API_URL||(localStorage.getItem("wedding_api_url")||"").trim().replace(/\/+$/,"");
   USER_NAME=(localStorage.getItem("wedding_user_name")||"").trim();
-  if(API_URL&&USER_NAME){$("setupOverlay").classList.add("hidden");$("userBadge").textContent=USER_NAME;initApp();}
-  else {
+  const authenticated=!ACCESS_PASSWORD||localStorage.getItem("wedding_auth")==="true";
+
+  if(API_URL&&USER_NAME&&authenticated){
+    $("setupOverlay").classList.add("hidden");$("userBadge").textContent=USER_NAME;initApp();
+  } else {
     $("setupOverlay").classList.remove("hidden");
-    // If URL is hardcoded, hide the URL field and help — just ask for name
+    // Show/hide password field
+    if(ACCESS_PASSWORD){
+      $("setupPasswordField").classList.remove("hidden");
+    } else {
+      $("setupPasswordField").classList.add("hidden");
+    }
+    // If URL is hardcoded, hide the URL field and help
     if(HARDCODED_API_URL){
       $("setupUrlField").classList.add("hidden");
       $("setupHelp").classList.add("hidden");
-      $("setupDesc").textContent="Enter your name to start tracking wedding expenses and guests together.";
+      $("setupDesc").textContent=ACCESS_PASSWORD
+        ?"Enter the password and your name to access the wedding planner."
+        :"Enter your name to start tracking wedding expenses and guests together.";
     } else {
       $("setupDesc").textContent="Enter your name and the Google Apps Script URL to connect to the shared wedding planner.";
     }
+    // Pre-fill name if already saved
+    if(USER_NAME) $("setupName").value=USER_NAME;
   }
 }
 function saveSetup(){
+  // Check password first
+  if(ACCESS_PASSWORD){
+    const pwd=$("setupPassword").value;
+    if(pwd!==ACCESS_PASSWORD){
+      $("setupError").textContent="Incorrect password. Please try again.";
+      $("setupError").classList.remove("hidden");
+      return;
+    }
+    localStorage.setItem("wedding_auth","true");
+  }
+
   const name=$("setupName").value.trim();
   if(!name){$("setupError").textContent="Please enter your name.";$("setupError").classList.remove("hidden");return}
 
@@ -449,7 +481,14 @@ function saveSetup(){
   localStorage.setItem("wedding_user_name",name);
   API_URL=url;USER_NAME=name;$("setupOverlay").classList.add("hidden");$("userBadge").textContent=USER_NAME;initApp();
 }
-function resetSetup(){if(confirm("Reset connection settings?")){localStorage.removeItem("wedding_api_url");localStorage.removeItem("wedding_user_name");location.reload()}}
+function resetSetup(){
+  if(confirm("Reset connection settings?")){
+    localStorage.removeItem("wedding_api_url");
+    localStorage.removeItem("wedding_user_name");
+    localStorage.removeItem("wedding_auth");
+    location.reload();
+  }
+}
 
 // ── API (JSONP — follows Google Apps Script redirects reliably) ──
 // ── API ──
