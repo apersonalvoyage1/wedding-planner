@@ -312,8 +312,8 @@ label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-s
           <input type="text" id="guestName" class="text-input" placeholder='e.g. "Ramesh Uncle & Family"'>
         </div>
         <div class="field-third">
-          <label class="field-label">Phone</label>
-          <input type="text" id="guestPhone" class="text-input" placeholder="+91 98765 43210">
+          <label class="field-label">Location</label>
+          <input type="text" id="guestLocation" class="text-input" placeholder="e.g. Hyderabad, Raipur, London">
         </div>
         <div class="field-third">
           <label class="field-label">Side</label>
@@ -361,6 +361,9 @@ label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-s
           <option value="bride">Bride's Side</option>
           <option value="groom">Groom's Side</option>
           <option value="mutual">Mutual</option>
+        </select>
+        <select class="select-input" id="guestFilterLocation" onchange="renderGuestList()">
+          <option value="all">All Locations</option>
         </select>
         <select class="select-input" id="guestFilterRsvp" onchange="renderGuestList()">
           <option value="all">All RSVP</option>
@@ -569,7 +572,7 @@ async function loadGuests(){
   guests=items.map(g=>({
     id:String(g.id||""),
     name:String(g.name||""),
-    phone:String(g.phone||""),
+    location:String(g.location||g.phone||""),
     side:String(g.side||"mutual"),
     relation:String(g.relation||""),
     guests:Number(g.guests)||1,
@@ -668,7 +671,7 @@ async function expDelete(id){if(!confirm("Delete this expense?"))return;await ap
 
 // ── Guest form ──
 function updateGuestSubmit(){$("guestSubmitBtn").disabled=!$("guestName").value.trim()}
-function guestResetForm(){$("guestName").value="";$("guestPhone").value="";$("guestSide").value="bride";$("guestRelation").value="";$("guestCount").value="1";$("guestRsvp").value="pending";$("guestNotes").value="";guestEditId=null;updateGuestSubmit();$("guestSubmitBtn").textContent="Add Guest";$("guestCancelBtn").classList.add("hidden")}
+function guestResetForm(){$("guestName").value="";$("guestLocation").value="";$("guestSide").value="bride";$("guestRelation").value="";$("guestCount").value="1";$("guestRsvp").value="pending";$("guestNotes").value="";guestEditId=null;updateGuestSubmit();$("guestSubmitBtn").textContent="Add Guest";$("guestCancelBtn").classList.add("hidden")}
 function guestCancelEdit(){guestResetForm()}
 
 let _guestSubmitting=false;
@@ -677,7 +680,7 @@ async function guestSubmit(){
   const name=$("guestName").value.trim();if(!name)return;
   _guestSubmitting=true;
   $("guestSubmitBtn").disabled=true;$("guestSubmitBtn").textContent="Saving...";
-  const data={id:guestEditId||Date.now().toString(),name,phone:$("guestPhone").value.trim(),side:$("guestSide").value,relation:$("guestRelation").value.trim(),guests:parseInt($("guestCount").value)||1,rsvp:$("guestRsvp").value,notes:$("guestNotes").value.trim(),addedBy:USER_NAME};
+  const data={id:guestEditId||Date.now().toString(),name,phone:$("guestLocation").value.trim(),side:$("guestSide").value,relation:$("guestRelation").value.trim(),guests:parseInt($("guestCount").value)||1,rsvp:$("guestRsvp").value,notes:$("guestNotes").value.trim(),addedBy:USER_NAME};
   await apiFetch("guests",guestEditId?"update":"add",data);
   guestResetForm();
   _guestSubmitting=false;
@@ -685,7 +688,7 @@ async function guestSubmit(){
 }
 function guestStartEdit(id){
   const g=guests.find(x=>String(x.id)===String(id));if(!g)return;
-  $("guestName").value=g.name;$("guestPhone").value=g.phone||"";$("guestSide").value=g.side||"bride";$("guestRelation").value=g.relation||"";$("guestCount").value=g.guests||1;$("guestRsvp").value=g.rsvp||"pending";$("guestNotes").value=g.notes||"";
+  $("guestName").value=g.name;$("guestLocation").value=g.location||"";$("guestSide").value=g.side||"bride";$("guestRelation").value=g.relation||"";$("guestCount").value=g.guests||1;$("guestRsvp").value=g.rsvp||"pending";$("guestNotes").value=g.notes||"";
   guestEditId=g.id;updateGuestSubmit();$("guestSubmitBtn").textContent="Update Guest";$("guestCancelBtn").classList.remove("hidden");switchTab("guest-add");
 }
 async function guestDelete(id){if(!confirm("Remove this guest?"))return;await apiFetch("guests","delete",{id:String(id)});await refreshAll();renderGuestList()}
@@ -735,11 +738,18 @@ function renderGuestList(){
   const has=guests.length>0;
   $("guestListEmpty").classList.toggle("hidden",has);$("guestListContent").classList.toggle("hidden",!has);
   if(!has)return;
-  const s=$("guestSearch").value.toLowerCase(),side=$("guestFilterSide").value,rsvp=$("guestFilterRsvp").value;
+
+  // Build location filter options dynamically
+  const locations=[...new Set(guests.map(g=>(g.location||"").trim()).filter(Boolean))].sort();
+  const curLoc=$("guestFilterLocation").value;
+  $("guestFilterLocation").innerHTML=`<option value="all">All Locations</option>`+locations.map(l=>`<option value="${esc(l)}"${l===curLoc?" selected":""}>${esc(l)}</option>`).join("");
+
+  const s=$("guestSearch").value.toLowerCase(),side=$("guestFilterSide").value,rsvp=$("guestFilterRsvp").value,loc=$("guestFilterLocation").value;
   let list=[...guests];
   if(side!=="all")list=list.filter(g=>g.side===side);
   if(rsvp!=="all")list=list.filter(g=>g.rsvp===rsvp);
-  if(s)list=list.filter(g=>g.name.toLowerCase().includes(s)||(g.relation||"").toLowerCase().includes(s)||(g.notes||"").toLowerCase().includes(s));
+  if(loc!=="all")list=list.filter(g=>(g.location||"").trim()===loc);
+  if(s)list=list.filter(g=>g.name.toLowerCase().includes(s)||(g.relation||"").toLowerCase().includes(s)||(g.location||"").toLowerCase().includes(s)||(g.notes||"").toLowerCase().includes(s));
   list.sort((a,b)=>a.name.localeCompare(b.name));
   const totalGuests=list.reduce((s,g)=>s+g.guests,0);
   $("guestFilteredCount").textContent=`${list.length} invitation${list.length!==1?"s":""}`;
@@ -752,7 +762,7 @@ function renderGuestList(){
       <div class="guest-meta">
         <span class="side-tag side-${g.side||"mutual"}">${esc(sideInfo.label)}</span>
         ${g.relation?`<span class="guest-detail">${esc(g.relation)}</span>`:""}
-        ${g.phone?`<span class="guest-detail">📞 ${esc(g.phone)}</span>`:""}
+        ${g.location?`<span class="guest-detail">📍 ${esc(g.location)}</span>`:""}
         ${g.addedBy?`<span class="added-by-tag">by ${esc(g.addedBy)}</span>`:""}
       </div>
       ${g.notes?`<div class="expense-notes">${esc(g.notes)}</div>`:""}
@@ -803,8 +813,8 @@ function exportCSV(){
     const r=[...expenses].sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>{const c=CATEGORIES.find(x=>x.id===e.category)||{label:e.category};return `${e.date},"${c.label}","${e.description}",${e.amount},"${e.notes||""}","${e.addedBy||""}"`}).join("\n");
     dl(h+r,"wedding-expenses.csv");
   } else {
-    const h="Name,Phone,Side,Relation,Guests,RSVP,Notes,Added By\n";
-    const r=[...guests].sort((a,b)=>a.name.localeCompare(b.name)).map(g=>`"${g.name}","${g.phone||""}","${g.side||""}","${g.relation||""}",${g.guests},"${g.rsvp||""}","${g.notes||""}","${g.addedBy||""}"`).join("\n");
+    const h="Name,Location,Side,Relation,Guests,RSVP,Notes,Added By\n";
+    const r=[...guests].sort((a,b)=>a.name.localeCompare(b.name)).map(g=>`"${g.name}","${g.location||""}","${g.side||""}","${g.relation||""}",${g.guests},"${g.rsvp||""}","${g.notes||""}","${g.addedBy||""}"`).join("\n");
     dl(h+r,"wedding-guests.csv");
   }
 }
