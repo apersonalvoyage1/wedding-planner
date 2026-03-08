@@ -389,17 +389,20 @@ label.field-label{display:block;font-size:11px;text-transform:uppercase;letter-s
 
 <script>
 // ══════════════════════════════════════════════════════════════
-//  CONFIG: Paste your Google Apps Script URL below.
-//  Once set, users only need to enter their name — no URL needed.
-//  Leave empty ("") to show the URL field in setup.
+//  CONFIG — Values are encoded. To set yours:
+//  1. Go to https://www.base64encode.org/
+//  2. Encode your API URL and password separately
+//  3. Paste the encoded strings below
 // ══════════════════════════════════════════════════════════════
-const HARDCODED_API_URL = "https://script.google.com/macros/s/AKfycbyUKbEAL_yQ_7B9BMUMnurJ50AQThGrN-5VWU24Ze1uPMqq4H3ishdiCGNuuY_lSgEH9g/exec";
-// Example: const HARDCODED_API_URL = "https://script.google.com/macros/s/ABC.../exec";
-
-//  Set a shared password below. Leave empty ("") for no password.
-const ACCESS_PASSWORD = "abhi-deepu-wedding@2026";
-// Example: const ACCESS_PASSWORD = "wedding2026";
+const _a = "aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J5VUtiRUFMX3lRXzdCOUJNVU1udXJKNTBBUVRoR3JOLTVWV1UyNFplMXVQTXFxNEgzaXNoZGlDR051dVlfbFNnRUg5Zy9leGVj";
+const _p = "YWJoaS1kZWVwdS13ZWRkaW5nQDIwMjY=";
+  
+  // encoded API URL
+  // encoded password (leave "" for no password)
 // ══════════════════════════════════════════════════════════════
+const _d=s=>{try{return atob(s)}catch(e){return s}};
+const HARDCODED_API_URL = _a ? _d(_a) : "";
+const ACCESS_PASSWORD = _p ? _d(_p) : "";
 
 // ── Data ──
 const CATEGORIES=[
